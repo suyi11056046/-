@@ -430,24 +430,122 @@
         }
 
         @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            
-            .calendar td {
-                height: 100px;
-            }
-            
-            .time-slot {
-                font-size: 0.75rem;
-                padding: 3px 5px;
-            }
-            
-            .gallery-container {
-                width: 90%;
-                padding-bottom: 50%;
-            }
-        }
+  .calendar-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .calendar {
+    min-width: 700px; /* 适当减小最小宽度 */
+  }
+  
+  .calendar th,
+  .calendar td {
+    padding: 8px 5px; /* 减小内边距 */
+    font-size: 0.85rem;
+  }
+  .calendar-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+    margin: 10px;
+  }
+  .container {
+    padding: 10px;
+  }
+  
+  .logo h1 {
+    font-size: 1.5rem;
+  }
+  
+  .card {
+    padding: 15px;
+  }
+  
+  .card-title {
+    font-size: 1.2rem;
+  }
+  
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-nav {
+    grid-template-columns: 1fr;
+  }
+  
+  #refreshBtn {
+    grid-column: span 1;
+  }
+  
+  .gallery-container {
+    width: 95%;
+    padding-bottom: 60%;
+  }
+  .modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .modal-title {
+    font-size: 1.2rem;
+  }
+  .dashboard {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  .user-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .user-info .btn {
+    align-self: flex-end;
+  }
+  .stat-card {
+    padding: 15px;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+  }
+  .calendar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .calendar-nav .btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  
+  #refreshBtn {
+    grid-column: span 2;
+  }
+  
+  .time-slot {
+    font-size: 0.7rem;
+    padding: 3px 4px;
+    line-height: 1.2;
+  }
+  
+  .date-header {
+    font-size: 0.8rem;
+  }
+}
     </style>
 </head>
 <body>
