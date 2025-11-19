@@ -6,6 +6,7 @@
     <title>北商熱音社 - 練團室預約系統</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 保持原有的 CSS 樣式 */
         :root {
             --primary-color: #4da6ff;
             --primary-light: #e6f2ff;
@@ -73,12 +74,12 @@
             position: relative;
             width: 80%;
             height: 0;
-            padding-bottom: 45%; /* 縮小的16:9比例 */
+            padding-bottom: 45%;
             overflow: hidden;
             border-radius: 10px;
             margin: 15px auto;
             max-width: 800px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* 添加輕微陰影 */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .gallery-slide {
@@ -202,6 +203,23 @@
 
         .btn-danger:hover {
             background-color: #d32f2f;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            margin-bottom: 10px;
+        }
+
+        .sync-status.syncing {
+            color: var(--warning-color);
+        }
+
+        .sync-status.synced {
+            color: var(--success-color);
         }
 
         .dashboard {
@@ -404,6 +422,13 @@
             border: 1px solid #ffcdd2;
         }
 
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--light-text);
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -420,7 +445,7 @@
             
             .gallery-container {
                 width: 90%;
-                padding-bottom: 50%; /* 在手機上稍微調整比例 */
+                padding-bottom: 50%;
             }
         }
     </style>
@@ -433,19 +458,19 @@
             </div>
             <div class="gallery-container" id="galleryContainer">
                 <div class="gallery-slide active">
-                    <img src="imgs/LINE_ALBUM_2025326_251119_1.jpg" alt="樂團表演">
+                    <img src="imgs/LINE_ALBUM_2025326_251119_1.jpg" alt="樂團表演" loading="lazy">
                 </div>
                 <div class="gallery-slide">
-                    <img src="imgs/LINE_ALBUM_202539_251119_1.jpg" alt="錄音室">
+                    <img src="imgs/LINE_ALBUM_202539_251119_1.jpg" alt="錄音室" loading="lazy">
                 </div>
                 <div class="gallery-slide">
-                    <img src="imgs/LINE_ALBUM_2025427_251119_1.jpg" alt="吉他手">
+                    <img src="imgs/LINE_ALBUM_2025427_251119_1.jpg" alt="吉他手" loading="lazy">
                 </div>
                 <div class="gallery-slide">
-                    <img src="imgs/LINE_ALBUM_2025427_251119_2.jpg" alt="鼓手">
+                    <img src="imgs/LINE_ALBUM_2025427_251119_2.jpg" alt="鼓手" loading="lazy">
                 </div>
                 <div class="gallery-slide">
-                    <img src="imgs/LINE_ALBUM_202568淨灘_251119_1.jpg" alt="鼓手">
+                    <img src="imgs/LINE_ALBUM_202568淨灘_251119_1.jpg" alt="淨灘活動" loading="lazy">
                 </div>
             </div>
         </header>
@@ -472,6 +497,10 @@
                 <div>
                     <h3>歡迎, <span id="currentUser">用戶</span></h3>
                     <p id="userRole" style="color: var(--light-text);">社員</p>
+                    <div class="sync-status" id="syncStatus">
+                        <i class="fas fa-sync"></i>
+                        <span>資料同步中...</span>
+                    </div>
                 </div>
                 <button id="logoutBtn" class="btn">登出</button>
             </div>
@@ -508,7 +537,14 @@
                         <button id="prevWeek" class="btn"><i class="fas fa-chevron-left"></i> 上週</button>
                         <button id="currentWeek" class="btn">本週</button>
                         <button id="nextWeek" class="btn">下週 <i class="fas fa-chevron-right"></i></button>
+                        <button id="refreshBtn" class="btn" style="background-color: var(--success-color);">
+                            <i class="fas fa-sync-alt"></i> 重新整理
+                        </button>
                     </div>
+                </div>
+                
+                <div class="loading" id="calendarLoading">
+                    <i class="fas fa-spinner fa-spin"></i> 載入中...
                 </div>
                 
                 <div class="calendar-container">
@@ -570,7 +606,39 @@
         </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        // 🔥 Firebase 配置
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            addDoc, 
+            doc, 
+            deleteDoc, 
+            setDoc,
+            serverTimestamp,
+            query,
+            where,
+            orderBy,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDIPsWgHaBljZEdK3Xkjt19vLgGCOUWsg",
+            authDomain: "ntub-music-booking.firebaseapp.com",
+            projectId: "ntub-music-booking",
+            storageBucket: "ntub-music-booking.firebasestorage.app",
+            messagingSenderId: "181138609050",
+            appId: "1:181138609050:web:92b657392017ee637c2023",
+            measurementId: "G-BE6STHBQV7"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // 社員名單
         const members = [
             "姜宏叡", "古湘菡", "蔡宜霏", "陳宥任", "陳羿華", 
@@ -584,95 +652,20 @@
             "魏靚瑄", "張睿芯", "張詠怡"
         ];
 
-        // 初始化數據 - 重置為空數據
-        function initializeData() {
-            // 檢查是否需要重置數據（每年自動重置）
-            const lastResetYear = localStorage.getItem('ntubMusicLastResetYear');
-            const currentYear = new Date().getFullYear();
-            
-            if (!lastResetYear || parseInt(lastResetYear) < currentYear) {
-                // 重置所有數據
-                localStorage.removeItem('ntubMusicBookings');
-                localStorage.removeItem('ntubMusicUsage');
-                localStorage.setItem('ntubMusicLastResetYear', currentYear.toString());
-            }
-            
-            // 檢查是否已有數據
-            if (!localStorage.getItem('ntubMusicBookings')) {
-                // 初始預約資料 - 空數據
-                const initialBookings = [];
-                localStorage.setItem('ntubMusicBookings', JSON.stringify(initialBookings));
-            }
-            
-            // 初始化使用記錄
-            if (!localStorage.getItem('ntubMusicUsage')) {
-                const initialUsage = {
-                    monthUsers: [], // 改為陣列
-                    todayBookings: 0,
-                    totalBookings: 0,
-                    lastReset: new Date().toDateString()
-                };
-                localStorage.setItem('ntubMusicUsage', JSON.stringify(initialUsage));
-            }
-            
-            // 檢查是否需要重置月統計
-            const usage = JSON.parse(localStorage.getItem('ntubMusicUsage'));
-            const today = new Date().toDateString();
-            if (usage.lastReset !== today) {
-                usage.monthUsers = [];
-                usage.todayBookings = 0;
-                usage.lastReset = today;
-                localStorage.setItem('ntubMusicUsage', JSON.stringify(usage));
-            }
-        }
-
-        // 獲取預約數據
-        function getBookings() {
-            return JSON.parse(localStorage.getItem('ntubMusicBookings') || '[]');
-        }
-
-        // 保存預約數據
-        function saveBookings(bookings) {
-            localStorage.setItem('ntubMusicBookings', JSON.stringify(bookings));
-        }
-
-        // 獲取使用統計
-        function getUsageStats() {
-            const usage = JSON.parse(localStorage.getItem('ntubMusicUsage') || '{}');
-            // 確保 monthUsers 是陣列
-            if (!usage.monthUsers || !Array.isArray(usage.monthUsers)) {
-                usage.monthUsers = [];
-            }
-            return usage;
-        }
-
-        // 更新使用統計
-        function updateUsageStats(userName, isNewBooking = false, isCancelBooking = false) {
-            const usage = getUsageStats();
-            
-            // 記錄本月使用者
-            if (userName && !usage.monthUsers.includes(userName)) {
-                usage.monthUsers.push(userName);
-            }
-            
-            // 更新今日預約數
-            const today = getFormattedDate(new Date());
-            const bookings = getBookings();
-            const todayBookings = bookings.filter(booking => booking.date === today).length;
-            usage.todayBookings = todayBookings;
-            
-            // 更新總預約數
-            usage.totalBookings = bookings.length;
-            
-            localStorage.setItem('ntubMusicUsage', JSON.stringify(usage));
-            return usage;
-        }
-
         // 全域變數
         let currentUser = null;
         let currentWeekStart = new Date();
         let selectedBooking = null;
         let galleryInterval;
+        let bookings = [];
+        let usageStats = {
+            monthUsers: [],
+            todayBookings: 0,
+            totalBookings: 0
+        };
+        let unsubscribeBookings = null;
+        let isInitialLoad = true;
+        let useSimpleQuery = true; // 使用簡單查詢避免索引問題
 
         // DOM 元素
         const loginSection = document.getElementById('loginSection');
@@ -687,6 +680,7 @@
         const prevWeekBtn = document.getElementById('prevWeek');
         const nextWeekBtn = document.getElementById('nextWeek');
         const currentWeekBtn = document.getElementById('currentWeek');
+        const refreshBtn = document.getElementById('refreshBtn');
         const bookingModal = document.getElementById('bookingModal');
         const cancelModal = document.getElementById('cancelModal');
         const bookingDetails = document.getElementById('bookingDetails');
@@ -698,13 +692,13 @@
         const closeButtons = document.querySelectorAll('.close');
         const galleryContainer = document.getElementById('galleryContainer');
         const currentYearSpan = document.getElementById('currentYear');
+        const syncStatus = document.getElementById('syncStatus');
+        const calendarLoading = document.getElementById('calendarLoading');
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 設置當前年份
             currentYearSpan.textContent = new Date().getFullYear();
-            
-            initializeData();
             
             // 設定本週開始日期（週一）
             const today = new Date();
@@ -713,8 +707,8 @@
             currentWeekStart = new Date(today);
             currentWeekStart.setDate(today.getDate() + diffToMonday);
             
-            updateStats();
-            renderCalendar();
+            // 預載入資料
+            preloadData();
             startGallery();
             
             // 事件監聽器
@@ -724,6 +718,7 @@
             prevWeekBtn.addEventListener('click', goToPrevWeek);
             nextWeekBtn.addEventListener('click', goToNextWeek);
             currentWeekBtn.addEventListener('click', goToCurrentWeek);
+            refreshBtn.addEventListener('click', forceRefresh);
             confirmBookingBtn.addEventListener('click', confirmBooking);
             cancelBookingBtn.addEventListener('click', () => bookingModal.style.display = 'none');
             confirmCancelBtn.addEventListener('click', confirmCancel);
@@ -747,6 +742,303 @@
             });
         });
 
+        // 🔥 預載入資料 - 最快的初始化方式
+        async function preloadData() {
+            updateSyncStatus('syncing', '快速載入中...');
+            
+            try {
+                // 並行載入所有資料
+                const [bookingsData, statsData] = await Promise.allSettled([
+                    loadBookingsData(),
+                    loadStatsData()
+                ]);
+
+                if (bookingsData.status === 'fulfilled') {
+                    bookings = bookingsData.value;
+                }
+
+                if (statsData.status === 'fulfilled' && statsData.value) {
+                    usageStats = statsData.value;
+                }
+
+                updateStats();
+                renderCalendar();
+                updateSyncStatus('synced', '資料已就緒');
+                
+                // 啟動即時監聽
+                startRealtimeListener();
+                
+                console.log('快速載入完成:', bookings.length, '筆預約');
+            } catch (error) {
+                console.error('預載入錯誤:', error);
+                handleLoadError(error);
+            }
+        }
+
+        // 🔥 載入預約資料（優化查詢 - 避免索引問題）
+        async function loadBookingsData() {
+            try {
+                // 方法1：使用簡單查詢（不需要索引）
+                if (useSimpleQuery) {
+                    const snapshot = await getDocs(collection(db, 'bookings'));
+                    const data = [];
+                    snapshot.forEach(doc => {
+                        const bookingData = doc.data();
+                        // 在客戶端過濾最近30天的資料
+                        const bookingDate = new Date(bookingData.date);
+                        const thirtyDaysAgo = new Date();
+                        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                        
+                        if (bookingDate >= thirtyDaysAgo) {
+                            data.push({
+                                id: doc.id,
+                                ...bookingData
+                            });
+                        }
+                    });
+                    // 在客戶端排序
+                    data.sort((a, b) => {
+                        if (a.date === b.date) {
+                            return a.time.localeCompare(b.time);
+                        }
+                        return a.date.localeCompare(b.date);
+                    });
+                    return data;
+                } else {
+                    // 方法2：使用複合查詢（需要索引）
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const thirtyDaysAgoStr = getFormattedDate(thirtyDaysAgo);
+                    
+                    const q = query(
+                        collection(db, 'bookings'),
+                        where('date', '>=', thirtyDaysAgoStr),
+                        orderBy('date'),
+                        orderBy('time')
+                    );
+                    
+                    const snapshot = await getDocs(q);
+                    const data = [];
+                    snapshot.forEach(doc => {
+                        data.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    return data;
+                }
+            } catch (error) {
+                console.error('載入預約資料錯誤:', error);
+                if (error.code === 'failed-precondition') {
+                    // 如果索引錯誤，切換到簡單查詢
+                    useSimpleQuery = true;
+                    return await loadBookingsData(); // 重新嘗試
+                }
+                throw error;
+            }
+        }
+
+        // 🔥 載入統計資料
+        async function loadStatsData() {
+            try {
+                const statsDoc = await getDocs(collection(db, 'stats'));
+                if (!statsDoc.empty) {
+                    let stats = null;
+                    statsDoc.forEach(doc => {
+                        if (doc.id === 'usage') {
+                            stats = doc.data();
+                        }
+                    });
+                    return stats;
+                }
+            } catch (error) {
+                console.log('統計資料尚未建立');
+            }
+            return null;
+        }
+
+        // 🔥 啟動即時監聽（優化版本）
+        function startRealtimeListener() {
+            if (unsubscribeBookings) {
+                unsubscribeBookings(); // 清除舊的監聽
+            }
+
+            try {
+                if (useSimpleQuery) {
+                    // 使用簡單監聽（不需要索引）
+                    const q = query(collection(db, 'bookings'));
+                    
+                    unsubscribeBookings = onSnapshot(q, 
+                        (snapshot) => {
+                            const updatedBookings = [];
+                            snapshot.forEach(doc => {
+                                const bookingData = doc.data();
+                                // 在客戶端過濾最近30天的資料
+                                const bookingDate = new Date(bookingData.date);
+                                const thirtyDaysAgo = new Date();
+                                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                
+                                if (bookingDate >= thirtyDaysAgo) {
+                                    updatedBookings.push({
+                                        id: doc.id,
+                                        ...bookingData
+                                    });
+                                }
+                            });
+                            
+                            // 在客戶端排序
+                            updatedBookings.sort((a, b) => {
+                                if (a.date === b.date) {
+                                    return a.time.localeCompare(b.time);
+                                }
+                                return a.date.localeCompare(b.date);
+                            });
+                            
+                            bookings = updatedBookings;
+                            updateStats();
+                            if (!isInitialLoad) {
+                                renderCalendar();
+                            }
+                            updateSyncStatus('synced', '即時同步中');
+                        },
+                        (error) => {
+                            console.error('即時監聽錯誤:', error);
+                            if (error.code === 'failed-precondition') {
+                                useSimpleQuery = true;
+                                startRealtimeListener(); // 重新啟動簡單監聽
+                            } else {
+                                updateSyncStatus('error', '即時同步失敗');
+                            }
+                        }
+                    );
+                } else {
+                    // 使用複合監聽（需要索引）
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const thirtyDaysAgoStr = getFormattedDate(thirtyDaysAgo);
+                    
+                    const q = query(
+                        collection(db, 'bookings'),
+                        where('date', '>=', thirtyDaysAgoStr),
+                        orderBy('date'),
+                        orderBy('time')
+                    );
+
+                    unsubscribeBookings = onSnapshot(q, 
+                        (snapshot) => {
+                            bookings = [];
+                            snapshot.forEach(doc => {
+                                bookings.push({
+                                    id: doc.id,
+                                    ...doc.data()
+                                });
+                            });
+                            
+                            updateStats();
+                            if (!isInitialLoad) {
+                                renderCalendar();
+                            }
+                            updateSyncStatus('synced', '即時同步中');
+                        },
+                        (error) => {
+                            console.error('即時監聽錯誤:', error);
+                            if (error.code === 'failed-precondition') {
+                                // 自動切換到簡單查詢模式
+                                useSimpleQuery = true;
+                                startRealtimeListener();
+                                showAlert('已切換到簡單查詢模式', 'warning');
+                            } else {
+                                updateSyncStatus('error', '即時同步失敗');
+                            }
+                        }
+                    );
+                }
+
+                isInitialLoad = false;
+            } catch (error) {
+                console.error('啟動監聽錯誤:', error);
+                updateSyncStatus('error', '監聽啟動失敗');
+            }
+        }
+
+        // 🔥 強制重新整理
+        async function forceRefresh() {
+            updateSyncStatus('syncing', '強制重新整理中...');
+            await preloadData();
+            showAlert('資料已重新整理', 'success');
+        }
+
+        // 🔥 儲存統計資料到 Firebase
+        async function saveStats() {
+            try {
+                await setDoc(doc(db, 'stats', 'usage'), {
+                    ...usageStats,
+                    lastUpdated: serverTimestamp()
+                });
+                return true;
+            } catch (error) {
+                console.error('儲存統計資料錯誤:', error);
+                return false;
+            }
+        }
+
+        // 🔥 新增預約到 Firebase
+        async function addBooking(booking) {
+            try {
+                const docRef = await addDoc(collection(db, 'bookings'), {
+                    date: booking.date,
+                    time: booking.time,
+                    user: booking.user,
+                    timestamp: serverTimestamp(),
+                    createdAt: new Date().toISOString()
+                });
+                booking.id = docRef.id;
+                return true;
+            } catch (error) {
+                console.error('新增預約錯誤:', error);
+                return false;
+            }
+        }
+
+        // 🔥 從 Firebase 刪除預約
+        async function deleteBooking(bookingId) {
+            try {
+                await deleteDoc(doc(db, 'bookings', bookingId));
+                console.log('成功從 Firebase 刪除預約:', bookingId);
+                return true;
+            } catch (error) {
+                console.error('刪除預約錯誤:', error);
+                return false;
+            }
+        }
+
+        // 🔥 處理載入錯誤
+        function handleLoadError(error) {
+            console.error('載入資料錯誤:', error);
+            updateSyncStatus('error', '使用本地資料');
+            
+            // 使用本地備份資料
+            const localBookings = localStorage.getItem('ntubMusicBookings');
+            const localStats = localStorage.getItem('ntubMusicStats');
+            
+            if (localBookings) {
+                bookings = JSON.parse(localBookings);
+            }
+            if (localStats) {
+                usageStats = JSON.parse(localStats);
+            }
+            
+            updateStats();
+            renderCalendar();
+            showAlert('使用本地備份資料', 'error');
+        }
+
+        // 更新同步狀態
+        function updateSyncStatus(status, message) {
+            syncStatus.className = `sync-status ${status}`;
+            syncStatus.innerHTML = `<i class="fas fa-sync${status === 'syncing' ? ' fa-spin' : ''}"></i><span>${message}</span>`;
+        }
+
         // 藝廊輪播功能
         function startGallery() {
             const slides = document.querySelectorAll('.gallery-slide');
@@ -756,7 +1048,7 @@
                 slides[currentSlide].classList.remove('active');
                 currentSlide = (currentSlide + 1) % slides.length;
                 slides[currentSlide].classList.add('active');
-            }, 5000); // 每5秒切換一次
+            }, 5000);
         }
 
         // 處理登入
@@ -777,10 +1069,8 @@
                 
                 // 更新使用統計
                 updateUsageStats(userName);
-                updateStats();
                 
                 showAlert(`歡迎回來，${userName}！`, 'success');
-                renderCalendar();
             } else {
                 showAlert('您的姓名不在社員名單中，請確認輸入正確', 'error');
             }
@@ -794,7 +1084,6 @@
             loginSection.style.display = 'none';
             mainContent.style.display = 'block';
             showAlert('您目前以訪客身份瀏覽，僅可查看預約狀況', 'success');
-            renderCalendar();
         }
 
         // 處理登出
@@ -803,106 +1092,138 @@
             userNameInput.value = '';
             mainContent.style.display = 'none';
             loginSection.style.display = 'block';
+            
+            // 清除監聽
+            if (unsubscribeBookings) {
+                unsubscribeBookings();
+                unsubscribeBookings = null;
+            }
+        }
+
+        // 更新使用統計
+        function updateUsageStats(userName) {
+            // 記錄本月使用者
+            if (userName && !usageStats.monthUsers.includes(userName)) {
+                usageStats.monthUsers.push(userName);
+            }
+            
+            // 更新今日預約數
+            const today = getFormattedDate(new Date());
+            usageStats.todayBookings = bookings.filter(booking => booking.date === today).length;
+            
+            // 更新總預約數
+            usageStats.totalBookings = bookings.length;
+            
+            // 自動儲存統計資料
+            saveStats();
         }
 
         // 更新統計數據
         function updateStats() {
-            const usage = getUsageStats();
-            const bookings = getBookings();
-            
-            document.getElementById('monthUsers').textContent = usage.monthUsers ? usage.monthUsers.length : 0;
-            document.getElementById('todayBookings').textContent = usage.todayBookings || 0;
+            document.getElementById('monthUsers').textContent = usageStats.monthUsers ? usageStats.monthUsers.length : 0;
+            document.getElementById('todayBookings').textContent = usageStats.todayBookings || 0;
             document.getElementById('totalBookings').textContent = bookings.length;
             document.getElementById('bookingRate').textContent = calculateBookingRate();
         }
 
-        // 渲染日曆
+        // 🔥 優化的日曆渲染
         function renderCalendar() {
-            calendarBody.innerHTML = '';
+            // 顯示載入中
+            calendarLoading.style.display = 'block';
+            calendarBody.style.opacity = '0.5';
             
-            // 建立時間段
-            const timeSlots = [];
-            for (let hour = 8; hour <= 21; hour++) {
-                const startTime = `${hour.toString().padStart(2, '0')}:00`;
-                const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
-                timeSlots.push(`${startTime}-${endTime}`);
-            }
-            
-            // 建立一週的日期
-            const weekDates = [];
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(currentWeekStart);
-                date.setDate(currentWeekStart.getDate() + i);
-                weekDates.push(date);
-            }
-            
-            // 建立日曆行（每個時間段一行）
-            for (let i = 0; i < timeSlots.length; i++) {
-                const row = document.createElement('tr');
+            // 使用 requestAnimationFrame 避免阻塞
+            requestAnimationFrame(() => {
+                calendarBody.innerHTML = '';
                 
-                for (let j = 0; j < 7; j++) {
-                    const cell = document.createElement('td');
-                    const date = weekDates[j];
-                    const dateString = getFormattedDate(date);
-                    const isToday = isSameDay(date, new Date());
-                    
-                    if (isToday) {
-                        cell.classList.add('today');
-                    }
-                    
-                    // 日期標頭（僅第一行顯示）
-                    if (i === 0) {
-                        const dateHeader = document.createElement('div');
-                        dateHeader.className = 'date-header';
-                        dateHeader.innerHTML = `
-                            <span>${date.getDate()}</span>
-                            <span>${formatMonth(date.getMonth() + 1)}/${date.getDate()}</span>
-                        `;
-                        cell.appendChild(dateHeader);
-                    }
-                    
-                    // 時間段
-                    const timeSlot = document.createElement('div');
-                    timeSlot.className = 'time-slot';
-                    timeSlot.textContent = timeSlots[i];
-                    
-                    // 檢查是否可預約
-                    const isPast = date < new Date().setHours(0, 0, 0, 0);
-                    const isTooFar = date > new Date().setDate(new Date().getDate() + 60); // 最多提前兩個月
-                    
-                    // 檢查是否已被預約
-                    const bookings = getBookings();
-                    const existingBooking = bookings.find(booking => 
-                        booking.date === dateString && booking.time === timeSlots[i]
-                    );
-                    
-                    if (existingBooking) {
-                        if (currentUser && existingBooking.user === currentUser) {
-                            timeSlot.classList.add('own-booking');
-                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>您的預約</small>`;
-                            timeSlot.addEventListener('click', () => openCancelModal(existingBooking));
-                        } else {
-                            timeSlot.classList.add('booked');
-                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>${existingBooking.user}已預約</small>`;
-                        }
-                    } else if (isPast || isTooFar || !currentUser) {
-                        timeSlot.classList.add('past');
-                        if (isTooFar) {
-                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>不可預約</small>`;
-                        } else {
-                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>不可用</small>`;
-                        }
-                    } else {
-                        timeSlot.classList.add('available');
-                        timeSlot.addEventListener('click', () => openBookingModal(dateString, timeSlots[i]));
-                    }
-                    
-                    cell.appendChild(timeSlot);
-                    row.appendChild(cell);
+                // 建立時間段
+                const timeSlots = [];
+                for (let hour = 8; hour <= 21; hour++) {
+                    const startTime = `${hour.toString().padStart(2, '0')}:00`;
+                    const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
+                    timeSlots.push(`${startTime}-${endTime}`);
                 }
                 
-                calendarBody.appendChild(row);
-            }
+                // 建立一週的日期
+                const weekDates = [];
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(currentWeekStart);
+                    date.setDate(currentWeekStart.getDate() + i);
+                    weekDates.push(date);
+                }
+                
+                // 建立日曆行（每個時間段一行）
+                for (let i = 0; i < timeSlots.length; i++) {
+                    const row = document.createElement('tr');
+                    
+                    for (let j = 0; j < 7; j++) {
+                        const cell = document.createElement('td');
+                        const date = weekDates[j];
+                        const dateString = getFormattedDate(date);
+                        const isToday = isSameDay(date, new Date());
+                        
+                        if (isToday) {
+                            cell.classList.add('today');
+                        }
+                        
+                        // 日期標頭（僅第一行顯示）- 修改為只顯示一次日期
+                        if (i === 0) {
+                            const dateHeader = document.createElement('div');
+                            dateHeader.className = 'date-header';
+                            dateHeader.innerHTML = `
+                                <span>${formatMonth(date.getMonth() + 1)}/${date.getDate()}</span>
+                            `;
+                            cell.appendChild(dateHeader);
+                        }
+                        
+                        // 時間段
+                        const timeSlot = document.createElement('div');
+                        timeSlot.className = 'time-slot';
+                        timeSlot.textContent = timeSlots[i];
+                        
+                        // 檢查是否可預約
+                        const isPast = date < new Date().setHours(0, 0, 0, 0);
+                        const isTooFar = date > new Date().setDate(new Date().getDate() + 60);
+                        
+                        // 檢查是否已被預約
+                        const existingBooking = bookings.find(booking => 
+                            booking.date === dateString && booking.time === timeSlots[i]
+                        );
+                        
+                        if (existingBooking) {
+                            if (currentUser && existingBooking.user === currentUser) {
+                                timeSlot.classList.add('own-booking');
+                                timeSlot.innerHTML = `${timeSlots[i]} <br> <small>您的預約</small>`;
+                                timeSlot.addEventListener('click', () => openCancelModal(existingBooking));
+                            } else {
+                                timeSlot.classList.add('booked');
+                                timeSlot.innerHTML = `${timeSlots[i]} <br> <small>${existingBooking.user}已預約</small>`;
+                            }
+                        } else if (isPast || isTooFar || !currentUser) {
+                            timeSlot.classList.add('past');
+                            if (isTooFar) {
+                                timeSlot.innerHTML = `${timeSlots[i]} <br> <small>不可預約</small>`;
+                            } else {
+                                timeSlot.innerHTML = `${timeSlots[i]} <br> <small>不可用</small>`;
+                            }
+                        } else {
+                            timeSlot.classList.add('available');
+                            timeSlot.addEventListener('click', () => openBookingModal(dateString, timeSlots[i]));
+                        }
+                        
+                        cell.appendChild(timeSlot);
+                        row.appendChild(cell);
+                    }
+                    
+                    calendarBody.appendChild(row);
+                }
+                
+                // 隱藏載入中，顯示日曆
+                setTimeout(() => {
+                    calendarLoading.style.display = 'none';
+                    calendarBody.style.opacity = '1';
+                }, 100);
+            });
         }
 
         // 打開預約模態框
@@ -915,10 +1236,8 @@
         }
 
         // 確認預約
-        function confirmBooking() {
+        async function confirmBooking() {
             if (!selectedBooking || !currentUser) return;
-            
-            const bookings = getBookings();
             
             // 檢查是否已被預約
             const existingBooking = bookings.find(booking => 
@@ -928,28 +1247,29 @@
             if (existingBooking) {
                 showAlert('此時段已被預約，請選擇其他時段', 'error');
                 bookingModal.style.display = 'none';
-                renderCalendar();
                 return;
             }
             
             // 新增預約
             const newBooking = {
-                id: Date.now(), // 使用時間戳作為唯一ID
                 date: selectedBooking.date,
                 time: selectedBooking.time,
                 user: currentUser
             };
             
-            bookings.push(newBooking);
-            saveBookings(bookings);
+            // 🔥 儲存到 Firebase
+            const success = await addBooking(newBooking);
             
-            // 更新使用統計
-            updateUsageStats(currentUser, true);
-            updateStats();
-            
-            bookingModal.style.display = 'none';
-            renderCalendar();
-            showAlert(`${currentUser} 預約成功！`, 'success');
+            if (success) {
+                // 即時監聽會自動更新，不需要手動加入
+                // 更新使用統計
+                updateUsageStats(currentUser);
+                
+                bookingModal.style.display = 'none';
+                showAlert(`${currentUser} 預約成功！`, 'success');
+            } else {
+                showAlert('預約失敗，請稍後再試', 'error');
+            }
         }
 
         // 打開取消預約模態框
@@ -962,21 +1282,22 @@
         }
 
         // 確認取消預約
-        function confirmCancel() {
+        async function confirmCancel() {
             if (!selectedBooking) return;
             
-            // 移除預約
-            let bookings = getBookings();
-            bookings = bookings.filter(booking => booking.id !== selectedBooking.id);
-            saveBookings(bookings);
+            // 🔥 從 Firebase 刪除
+            const success = await deleteBooking(selectedBooking.id);
             
-            // 更新使用統計
-            updateUsageStats(currentUser, false, true);
-            updateStats();
-            
-            cancelModal.style.display = 'none';
-            renderCalendar();
-            showAlert('預約已取消', 'success');
+            if (success) {
+                // 即時監聽會自動更新，不需要手動移除
+                // 更新使用統計
+                updateUsageStats(currentUser);
+                
+                cancelModal.style.display = 'none';
+                showAlert('預約已取消', 'success');
+            } else {
+                showAlert('取消預約失敗，請稍後再試', 'error');
+            }
         }
 
         // 切換到上週
@@ -1017,7 +1338,6 @@
         }
 
         function calculateBookingRate() {
-            // 計算未來兩週內的預約率
             const futureDates = [];
             const today = new Date();
             
@@ -1027,32 +1347,27 @@
                 futureDates.push(getFormattedDate(date));
             }
             
-            const bookings = getBookings();
             const futureBookings = bookings.filter(booking => 
                 futureDates.includes(booking.date)
             );
             
-            const totalSlots = futureDates.length * 14; // 每天14個時段
-            const bookingRate = Math.round((futureBookings.length / totalSlots) * 100);
+            const totalSlots = futureDates.length * 14;
+            const bookingRate = totalSlots > 0 ? Math.round((futureBookings.length / totalSlots) * 100) : 0;
             return `${bookingRate}%`;
         }
 
         function showAlert(message, type) {
-            // 移除現有的提示
             const existingAlert = document.querySelector('.alert');
             if (existingAlert) {
                 existingAlert.remove();
             }
             
-            // 建立新提示
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
             
-            // 插入到body
             document.body.appendChild(alert);
             
-            // 3秒後自動移除
             setTimeout(() => {
                 if (alert.parentNode) {
                     alert.remove();
