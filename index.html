@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北商熱音社 - 練團室預約系統</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4da6ff;
+            --primary-light: #e6f2ff;
+            --primary-dark: #0066cc;
+            --secondary-color: #66b3ff;
+            --accent-color: #99ccff;
+            --text-color: #333;
+            --light-text: #666;
+            --background-color: #f5fbff;
+            --card-color: #ffffff;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --error-color: #F44336;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: transparent;
+            color: var(--text-color);
+            padding: 20px 0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        .logo h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .gallery-container {
+            position: relative;
+            width: 80%;
+            height: 0;
+            padding-bottom: 45%; /* 縮小的16:9比例 */
+            overflow: hidden;
+            border-radius: 10px;
+            margin: 15px auto;
+            max-width: 800px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* 添加輕微陰影 */
+        }
+
+        .gallery-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .gallery-slide.active {
+            opacity: 1;
+        }
+
+        .gallery-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 102, 204, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+
+        .login-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .login-form {
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--accent-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #3d8b40;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--light-text);
+        }
+
+        .calendar-container {
+            overflow-x: auto;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .calendar th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .calendar td {
+            border: 1px solid var(--accent-color);
+            padding: 10px;
+            vertical-align: top;
+            height: 120px;
+            width: 14.28%;
+        }
+
+        .date-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .today {
+            background-color: var(--primary-light);
+        }
+
+        .time-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .time-slot {
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .time-slot.available {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border: 1px solid #c8e6c9;
+        }
+
+        .time-slot.booked {
+            background-color: #ffebee;
+            color: var(--error-color);
+            border: 1px solid #ffcdd2;
+        }
+
+        .time-slot.own-booking {
+            background-color: #e3f2fd;
+            color: var(--primary-dark);
+            border: 1px solid #bbdefb;
+        }
+
+        .time-slot.available:hover {
+            background-color: #c8e6c9;
+        }
+
+        .time-slot.own-booking:hover {
+            background-color: #bbdefb;
+        }
+
+        .time-slot.past {
+            background-color: #f5f5f5;
+            color: #9e9e9e;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+        }
+
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--light-text);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1100;
+            min-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border: 1px solid #c8e6c9;
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            color: var(--error-color);
+            border: 1px solid #ffcdd2;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .calendar td {
+                height: 100px;
+            }
+            
+            .time-slot {
+                font-size: 0.75rem;
+                padding: 3px 5px;
+            }
+            
+            .gallery-container {
+                width: 90%;
+                padding-bottom: 50%; /* 在手機上稍微調整比例 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>北商熱音社練團室預約系統</h1>
+            </div>
+            <div class="gallery-container" id="galleryContainer">
+                <div class="gallery-slide active">
+                    <img src="imgs/LINE_ALBUM_2025326_251119_1.jpg" alt="樂團表演">
+                </div>
+                <div class="gallery-slide">
+                    <img src="imgs/LINE_ALBUM_202539_251119_1.jpg" alt="錄音室">
+                </div>
+                <div class="gallery-slide">
+                    <img src="imgs/LINE_ALBUM_2025427_251119_1.jpg" alt="吉他手">
+                </div>
+                <div class="gallery-slide">
+                    <img src="imgs/LINE_ALBUM_2025427_251119_2.jpg" alt="鼓手">
+                </div>
+                <div class="gallery-slide">
+                    <img src="imgs/LINE_ALBUM_202568淨灘_251119_1.jpg" alt="鼓手">
+                </div>
+            </div>
+        </header>
+
+        <!-- 登入區塊 -->
+        <section id="loginSection" class="card login-section">
+            <h2 class="card-title"><i class="fas fa-sign-in-alt"></i> 社員身份驗證</h2>
+            <p style="margin-bottom: 20px; text-align: center;">請輸入您的本名進行身份驗證，非社員僅能查看預約狀況</p>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="userName">您的本名</label>
+                    <input type="text" id="userName" class="form-control" placeholder="請輸入您的本名">
+                </div>
+                <button id="loginBtn" class="btn btn-block">驗證身份</button>
+                <button id="viewOnlyBtn" class="btn btn-block" style="margin-top: 10px; background-color: var(--secondary-color);">僅查看預約狀況</button>
+            </div>
+        </section>
+
+        <!-- 主內容區塊 -->
+        <section id="mainContent" style="display: none;">
+            <!-- 用戶資訊 -->
+            <div class="user-info card">
+                <div>
+                    <h3>歡迎, <span id="currentUser">用戶</span></h3>
+                    <p id="userRole" style="color: var(--light-text);">社員</p>
+                </div>
+                <button id="logoutBtn" class="btn">登出</button>
+            </div>
+
+            <!-- 統計儀表板 -->
+            <div class="dashboard">
+                <div class="card stat-card">
+                    <i class="fas fa-users fa-2x" style="color: var(--primary-color);"></i>
+                    <div class="stat-value" id="monthUsers">0</div>
+                    <div class="stat-label">本月使用人數</div>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-calendar-day fa-2x" style="color: var(--success-color);"></i>
+                    <div class="stat-value" id="todayBookings">0</div>
+                    <div class="stat-label">今日預約數</div>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-check-circle fa-2x" style="color: var(--warning-color);"></i>
+                    <div class="stat-value" id="totalBookings">0</div>
+                    <div class="stat-label">總預約完成數</div>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-chart-pie fa-2x" style="color: var(--error-color);"></i>
+                    <div class="stat-value" id="bookingRate">0%</div>
+                    <div class="stat-label">時段預約率</div>
+                </div>
+            </div>
+
+            <!-- 預約日曆 -->
+            <div class="card">
+                <div class="calendar-header">
+                    <h2 class="card-title"><i class="fas fa-calendar-alt"></i> 練團室預約日曆</h2>
+                    <div class="calendar-nav">
+                        <button id="prevWeek" class="btn"><i class="fas fa-chevron-left"></i> 上週</button>
+                        <button id="currentWeek" class="btn">本週</button>
+                        <button id="nextWeek" class="btn">下週 <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <div class="calendar-container">
+                    <table class="calendar">
+                        <thead>
+                            <tr>
+                                <th>週一</th>
+                                <th>週二</th>
+                                <th>週三</th>
+                                <th>週四</th>
+                                <th>週五</th>
+                                <th>週六</th>
+                                <th>週日</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendarBody">
+                            <!-- 日曆內容將由JavaScript生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 預約確認模態框 -->
+        <div id="bookingModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">預約確認</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <p>您即將預約：</p>
+                <p id="bookingDetails" style="font-weight: 600; margin: 10px 0;"></p>
+                <p>請確認無誤後進行預約</p>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button id="confirmBooking" class="btn btn-success">確認預約</button>
+                    <button id="cancelBooking" class="btn">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 取消預約模態框 -->
+        <div id="cancelModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">取消預約</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <p>您確定要取消以下預約嗎？</p>
+                <p id="cancelDetails" style="font-weight: 600; margin: 10px 0;"></p>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button id="confirmCancel" class="btn btn-danger">確認取消</button>
+                    <button id="cancelCancel" class="btn">返回</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>北商熱音社 &copy; <span id="currentYear"></span> | 練團室預約系統</p>
+        </div>
+    </div>
+
+    <script>
+        // 社員名單
+        const members = [
+            "姜宏叡", "古湘菡", "蔡宜霏", "陳宥任", "陳羿華", 
+            "陳可欣", "李家瑀", "蘇星融", "廖梓名", "姚騰崴",
+            "董倉鳴", "王沂敏", "蔡昀學", "盛英庭", "陳詩樺",
+            "林思宇", "曹興羽", "張芯晨", "王鵬瑋", "萬久羲",
+            "蔡昕妤", "魏靚瑄", "謝昕展", "蔡慈騵", "黃亮權",
+            "鄭怡婷", "周庭安", "陳紹緯", "劉亦恩", "呂其蓁",
+            "許又恩", "黃子恩", "蘇忻涵", "王柏元", "吳宥芹",
+            "詹子儀", "林祐立", "劉獻陽", "張書翊", "許芷涵",
+            "魏靚瑄", "張睿芯", "張詠怡"
+        ];
+
+        // 初始化數據 - 重置為空數據
+        function initializeData() {
+            // 檢查是否需要重置數據（每年自動重置）
+            const lastResetYear = localStorage.getItem('ntubMusicLastResetYear');
+            const currentYear = new Date().getFullYear();
+            
+            if (!lastResetYear || parseInt(lastResetYear) < currentYear) {
+                // 重置所有數據
+                localStorage.removeItem('ntubMusicBookings');
+                localStorage.removeItem('ntubMusicUsage');
+                localStorage.setItem('ntubMusicLastResetYear', currentYear.toString());
+            }
+            
+            // 檢查是否已有數據
+            if (!localStorage.getItem('ntubMusicBookings')) {
+                // 初始預約資料 - 空數據
+                const initialBookings = [];
+                localStorage.setItem('ntubMusicBookings', JSON.stringify(initialBookings));
+            }
+            
+            // 初始化使用記錄
+            if (!localStorage.getItem('ntubMusicUsage')) {
+                const initialUsage = {
+                    monthUsers: [], // 改為陣列
+                    todayBookings: 0,
+                    totalBookings: 0,
+                    lastReset: new Date().toDateString()
+                };
+                localStorage.setItem('ntubMusicUsage', JSON.stringify(initialUsage));
+            }
+            
+            // 檢查是否需要重置月統計
+            const usage = JSON.parse(localStorage.getItem('ntubMusicUsage'));
+            const today = new Date().toDateString();
+            if (usage.lastReset !== today) {
+                usage.monthUsers = [];
+                usage.todayBookings = 0;
+                usage.lastReset = today;
+                localStorage.setItem('ntubMusicUsage', JSON.stringify(usage));
+            }
+        }
+
+        // 獲取預約數據
+        function getBookings() {
+            return JSON.parse(localStorage.getItem('ntubMusicBookings') || '[]');
+        }
+
+        // 保存預約數據
+        function saveBookings(bookings) {
+            localStorage.setItem('ntubMusicBookings', JSON.stringify(bookings));
+        }
+
+        // 獲取使用統計
+        function getUsageStats() {
+            const usage = JSON.parse(localStorage.getItem('ntubMusicUsage') || '{}');
+            // 確保 monthUsers 是陣列
+            if (!usage.monthUsers || !Array.isArray(usage.monthUsers)) {
+                usage.monthUsers = [];
+            }
+            return usage;
+        }
+
+        // 更新使用統計
+        function updateUsageStats(userName, isNewBooking = false, isCancelBooking = false) {
+            const usage = getUsageStats();
+            
+            // 記錄本月使用者
+            if (userName && !usage.monthUsers.includes(userName)) {
+                usage.monthUsers.push(userName);
+            }
+            
+            // 更新今日預約數
+            const today = getFormattedDate(new Date());
+            const bookings = getBookings();
+            const todayBookings = bookings.filter(booking => booking.date === today).length;
+            usage.todayBookings = todayBookings;
+            
+            // 更新總預約數
+            usage.totalBookings = bookings.length;
+            
+            localStorage.setItem('ntubMusicUsage', JSON.stringify(usage));
+            return usage;
+        }
+
+        // 全域變數
+        let currentUser = null;
+        let currentWeekStart = new Date();
+        let selectedBooking = null;
+        let galleryInterval;
+
+        // DOM 元素
+        const loginSection = document.getElementById('loginSection');
+        const mainContent = document.getElementById('mainContent');
+        const userNameInput = document.getElementById('userName');
+        const loginBtn = document.getElementById('loginBtn');
+        const viewOnlyBtn = document.getElementById('viewOnlyBtn');
+        const currentUserSpan = document.getElementById('currentUser');
+        const userRoleSpan = document.getElementById('userRole');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const calendarBody = document.getElementById('calendarBody');
+        const prevWeekBtn = document.getElementById('prevWeek');
+        const nextWeekBtn = document.getElementById('nextWeek');
+        const currentWeekBtn = document.getElementById('currentWeek');
+        const bookingModal = document.getElementById('bookingModal');
+        const cancelModal = document.getElementById('cancelModal');
+        const bookingDetails = document.getElementById('bookingDetails');
+        const cancelDetails = document.getElementById('cancelDetails');
+        const confirmBookingBtn = document.getElementById('confirmBooking');
+        const cancelBookingBtn = document.getElementById('cancelBooking');
+        const confirmCancelBtn = document.getElementById('confirmCancel');
+        const cancelCancelBtn = document.getElementById('cancelCancel');
+        const closeButtons = document.querySelectorAll('.close');
+        const galleryContainer = document.getElementById('galleryContainer');
+        const currentYearSpan = document.getElementById('currentYear');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 設置當前年份
+            currentYearSpan.textContent = new Date().getFullYear();
+            
+            initializeData();
+            
+            // 設定本週開始日期（週一）
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            currentWeekStart = new Date(today);
+            currentWeekStart.setDate(today.getDate() + diffToMonday);
+            
+            updateStats();
+            renderCalendar();
+            startGallery();
+            
+            // 事件監聽器
+            loginBtn.addEventListener('click', handleLogin);
+            viewOnlyBtn.addEventListener('click', handleViewOnly);
+            logoutBtn.addEventListener('click', handleLogout);
+            prevWeekBtn.addEventListener('click', goToPrevWeek);
+            nextWeekBtn.addEventListener('click', goToNextWeek);
+            currentWeekBtn.addEventListener('click', goToCurrentWeek);
+            confirmBookingBtn.addEventListener('click', confirmBooking);
+            cancelBookingBtn.addEventListener('click', () => bookingModal.style.display = 'none');
+            confirmCancelBtn.addEventListener('click', confirmCancel);
+            cancelCancelBtn.addEventListener('click', () => cancelModal.style.display = 'none');
+            
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    bookingModal.style.display = 'none';
+                    cancelModal.style.display = 'none';
+                });
+            });
+            
+            // 點擊模態框外部關閉
+            window.addEventListener('click', function(event) {
+                if (event.target === bookingModal) {
+                    bookingModal.style.display = 'none';
+                }
+                if (event.target === cancelModal) {
+                    cancelModal.style.display = 'none';
+                }
+            });
+        });
+
+        // 藝廊輪播功能
+        function startGallery() {
+            const slides = document.querySelectorAll('.gallery-slide');
+            let currentSlide = 0;
+            
+            galleryInterval = setInterval(() => {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }, 5000); // 每5秒切換一次
+        }
+
+        // 處理登入
+        function handleLogin() {
+            const userName = userNameInput.value.trim();
+            
+            if (!userName) {
+                showAlert('請輸入您的姓名', 'error');
+                return;
+            }
+            
+            if (members.includes(userName)) {
+                currentUser = userName;
+                currentUserSpan.textContent = userName;
+                userRoleSpan.textContent = '社員';
+                loginSection.style.display = 'none';
+                mainContent.style.display = 'block';
+                
+                // 更新使用統計
+                updateUsageStats(userName);
+                updateStats();
+                
+                showAlert(`歡迎回來，${userName}！`, 'success');
+                renderCalendar();
+            } else {
+                showAlert('您的姓名不在社員名單中，請確認輸入正確', 'error');
+            }
+        }
+
+        // 處理僅查看
+        function handleViewOnly() {
+            currentUser = null;
+            currentUserSpan.textContent = '訪客';
+            userRoleSpan.textContent = '僅可查看';
+            loginSection.style.display = 'none';
+            mainContent.style.display = 'block';
+            showAlert('您目前以訪客身份瀏覽，僅可查看預約狀況', 'success');
+            renderCalendar();
+        }
+
+        // 處理登出
+        function handleLogout() {
+            currentUser = null;
+            userNameInput.value = '';
+            mainContent.style.display = 'none';
+            loginSection.style.display = 'block';
+        }
+
+        // 更新統計數據
+        function updateStats() {
+            const usage = getUsageStats();
+            const bookings = getBookings();
+            
+            document.getElementById('monthUsers').textContent = usage.monthUsers ? usage.monthUsers.length : 0;
+            document.getElementById('todayBookings').textContent = usage.todayBookings || 0;
+            document.getElementById('totalBookings').textContent = bookings.length;
+            document.getElementById('bookingRate').textContent = calculateBookingRate();
+        }
+
+        // 渲染日曆
+        function renderCalendar() {
+            calendarBody.innerHTML = '';
+            
+            // 建立時間段
+            const timeSlots = [];
+            for (let hour = 8; hour <= 21; hour++) {
+                const startTime = `${hour.toString().padStart(2, '0')}:00`;
+                const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
+                timeSlots.push(`${startTime}-${endTime}`);
+            }
+            
+            // 建立一週的日期
+            const weekDates = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(currentWeekStart);
+                date.setDate(currentWeekStart.getDate() + i);
+                weekDates.push(date);
+            }
+            
+            // 建立日曆行（每個時間段一行）
+            for (let i = 0; i < timeSlots.length; i++) {
+                const row = document.createElement('tr');
+                
+                for (let j = 0; j < 7; j++) {
+                    const cell = document.createElement('td');
+                    const date = weekDates[j];
+                    const dateString = getFormattedDate(date);
+                    const isToday = isSameDay(date, new Date());
+                    
+                    if (isToday) {
+                        cell.classList.add('today');
+                    }
+                    
+                    // 日期標頭（僅第一行顯示）
+                    if (i === 0) {
+                        const dateHeader = document.createElement('div');
+                        dateHeader.className = 'date-header';
+                        dateHeader.innerHTML = `
+                            <span>${date.getDate()}</span>
+                            <span>${formatMonth(date.getMonth() + 1)}/${date.getDate()}</span>
+                        `;
+                        cell.appendChild(dateHeader);
+                    }
+                    
+                    // 時間段
+                    const timeSlot = document.createElement('div');
+                    timeSlot.className = 'time-slot';
+                    timeSlot.textContent = timeSlots[i];
+                    
+                    // 檢查是否可預約
+                    const isPast = date < new Date().setHours(0, 0, 0, 0);
+                    const isTooFar = date > new Date().setDate(new Date().getDate() + 60); // 最多提前兩個月
+                    
+                    // 檢查是否已被預約
+                    const bookings = getBookings();
+                    const existingBooking = bookings.find(booking => 
+                        booking.date === dateString && booking.time === timeSlots[i]
+                    );
+                    
+                    if (existingBooking) {
+                        if (currentUser && existingBooking.user === currentUser) {
+                            timeSlot.classList.add('own-booking');
+                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>您的預約</small>`;
+                            timeSlot.addEventListener('click', () => openCancelModal(existingBooking));
+                        } else {
+                            timeSlot.classList.add('booked');
+                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>${existingBooking.user}已預約</small>`;
+                        }
+                    } else if (isPast || isTooFar || !currentUser) {
+                        timeSlot.classList.add('past');
+                        if (isTooFar) {
+                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>不可預約</small>`;
+                        } else {
+                            timeSlot.innerHTML = `${timeSlots[i]} <br> <small>不可用</small>`;
+                        }
+                    } else {
+                        timeSlot.classList.add('available');
+                        timeSlot.addEventListener('click', () => openBookingModal(dateString, timeSlots[i]));
+                    }
+                    
+                    cell.appendChild(timeSlot);
+                    row.appendChild(cell);
+                }
+                
+                calendarBody.appendChild(row);
+            }
+        }
+
+        // 打開預約模態框
+        function openBookingModal(date, time) {
+            selectedBooking = { date, time };
+            const dateObj = new Date(date);
+            const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+            bookingDetails.textContent = `${formattedDate} ${time}`;
+            bookingModal.style.display = 'flex';
+        }
+
+        // 確認預約
+        function confirmBooking() {
+            if (!selectedBooking || !currentUser) return;
+            
+            const bookings = getBookings();
+            
+            // 檢查是否已被預約
+            const existingBooking = bookings.find(booking => 
+                booking.date === selectedBooking.date && booking.time === selectedBooking.time
+            );
+            
+            if (existingBooking) {
+                showAlert('此時段已被預約，請選擇其他時段', 'error');
+                bookingModal.style.display = 'none';
+                renderCalendar();
+                return;
+            }
+            
+            // 新增預約
+            const newBooking = {
+                id: Date.now(), // 使用時間戳作為唯一ID
+                date: selectedBooking.date,
+                time: selectedBooking.time,
+                user: currentUser
+            };
+            
+            bookings.push(newBooking);
+            saveBookings(bookings);
+            
+            // 更新使用統計
+            updateUsageStats(currentUser, true);
+            updateStats();
+            
+            bookingModal.style.display = 'none';
+            renderCalendar();
+            showAlert(`${currentUser} 預約成功！`, 'success');
+        }
+
+        // 打開取消預約模態框
+        function openCancelModal(booking) {
+            selectedBooking = booking;
+            const dateObj = new Date(booking.date);
+            const formattedDate = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+            cancelDetails.textContent = `${formattedDate} ${booking.time} (預約人: ${booking.user})`;
+            cancelModal.style.display = 'flex';
+        }
+
+        // 確認取消預約
+        function confirmCancel() {
+            if (!selectedBooking) return;
+            
+            // 移除預約
+            let bookings = getBookings();
+            bookings = bookings.filter(booking => booking.id !== selectedBooking.id);
+            saveBookings(bookings);
+            
+            // 更新使用統計
+            updateUsageStats(currentUser, false, true);
+            updateStats();
+            
+            cancelModal.style.display = 'none';
+            renderCalendar();
+            showAlert('預約已取消', 'success');
+        }
+
+        // 切換到上週
+        function goToPrevWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+            renderCalendar();
+        }
+
+        // 切換到下週
+        function goToNextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            renderCalendar();
+        }
+
+        // 切換到本週
+        function goToCurrentWeek() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            currentWeekStart = new Date(today);
+            currentWeekStart.setDate(today.getDate() + diffToMonday);
+            renderCalendar();
+        }
+
+        // 工具函數
+        function getFormattedDate(date) {
+            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        }
+
+        function formatMonth(month) {
+            return month.toString().padStart(2, '0');
+        }
+
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+
+        function calculateBookingRate() {
+            // 計算未來兩週內的預約率
+            const futureDates = [];
+            const today = new Date();
+            
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                futureDates.push(getFormattedDate(date));
+            }
+            
+            const bookings = getBookings();
+            const futureBookings = bookings.filter(booking => 
+                futureDates.includes(booking.date)
+            );
+            
+            const totalSlots = futureDates.length * 14; // 每天14個時段
+            const bookingRate = Math.round((futureBookings.length / totalSlots) * 100);
+            return `${bookingRate}%`;
+        }
+
+        function showAlert(message, type) {
+            // 移除現有的提示
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            // 建立新提示
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            // 插入到body
+            document.body.appendChild(alert);
+            
+            // 3秒後自動移除
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
